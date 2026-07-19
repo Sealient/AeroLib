@@ -135,16 +135,21 @@ function UILibrary.new(titleText: string)
 	local self = setmetatable({}, UILibrary)
 
 	-- =======================================================
-	-- CORE RE-ANCHOR: REDIRECT FROM PLAYERGUI TO COREGUI
+	-- PRODUCTION RE-ANCHOR: CRUNCH-FREE COREGUI ARCHITECTURE
 	-- =======================================================
 	local CoreGui = game:GetService("CoreGui")
-
-	-- 1. Root ScreenGui Layer (Injected into CoreGui)
+	
+	-- 1. Root ScreenGui Layer (Live Environment Optimization)
 	local screenGui = Instance.new("ScreenGui")
 	screenGui.Name = "PremiumUILibrary"
 	screenGui.ResetOnSpawn = false
 	screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-	screenGui.IgnoreGuiInset = true -- FORCE FULLSCREEN OVERLAY BYPASSING TOPBAR OFFSET
+	screenGui.IgnoreGuiInset = true 
+	screenGui.ClipToDeviceSafeArea = false 
+	
+	-- CRITICAL BLUR BUSTERS FOR LIVE ROBLOX:
+	screenGui.SelectionGroup = true -- Forces individual layer culling optimization
+	screenGui.AutoLocalize = false   -- Prevents localized system fonts from rewriting/smudging text glyphs
 
 	-- Protect the UI from being detected or modified easily by external local scripts
 	if syn and syn.protect_gui then
@@ -153,19 +158,20 @@ function UILibrary.new(titleText: string)
 	screenGui.Parent = CoreGui
 	self.ScreenGui = screenGui
 
-	-- 2. Main Window Shell (Pixel-Perfect Coordinate Alignment)
+	-- 2. Main Window Shell (Crisp Sub-Pixel Alignment)
 	local mainFrame = Instance.new("Frame")
 	mainFrame.Name = "MainFrame"
-
-	-- Using explicit even-number math offsets to completely eliminate sub-pixel blur
+	
+	-- Even-numbered sizes aligned perfectly to the center monitor coordinates
 	mainFrame.Size = UDim2.new(0, 600, 0, 380)
 	mainFrame.Position = UDim2.new(0.5, -300, 0.5, -190) 
-
+	
 	mainFrame.BackgroundColor3 = THEME.Background
 	mainFrame.BorderSizePixel = 0
 	mainFrame.Active = true
 	mainFrame.Visible = false
 	mainFrame.Parent = screenGui
+	
 	addCorner(mainFrame, 10)
 	addStroke(mainFrame, THEME.Border, 1)
 
