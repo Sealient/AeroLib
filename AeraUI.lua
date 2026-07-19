@@ -144,6 +144,7 @@ function UILibrary.new(titleText: string)
 	screenGui.Name = "PremiumUILibrary"
 	screenGui.ResetOnSpawn = false
 	screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	screenGui.IgnoreGuiInset = true -- FORCE FULLSCREEN OVERLAY BYPASSING TOPBAR OFFSET
 
 	-- Protect the UI from being detected or modified easily by external local scripts
 	if syn and syn.protect_gui then
