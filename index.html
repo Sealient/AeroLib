@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AeraUI | Premium Roblox Interface Framework</title>
+    <!-- Google Fonts for Sleek Cyber Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-main: #07050d;
+            --bg-card: #0f0b1a;
+            --bg-nav: #0b0814;
+            --accent-purple: #a855f7;
+            --accent-purple-glow: rgba(168, 85, 247, 0.4);
+            --accent-purple-dark: #6b21a8;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --border-color: #221738;
+            --code-bg: #0b0814;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-purple);
+        }
+
+        /* Top Navigation Bar */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 70px;
+            background: rgba(11, 8, 20, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo span {
+            color: var(--accent-purple);
+            text-shadow: 0 0 10px var(--accent-purple-glow);
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            margin-left: 2rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--accent-purple);
+        }
+
+        /* Hero / Landing Section */
+        .hero {
+            padding: 140px 2rem 80px;
+            text-align: center;
+            background: radial-gradient(circle at top center, rgba(168, 85, 247, 0.15) 0%, transparent 60%);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .badge {
+            background: rgba(168, 85, 247, 0.1);
+            border: 1px solid var(--accent-purple);
+            color: var(--accent-purple);
+            padding: 6px 16px;
+            border-radius: 100px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.2);
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 1rem;
+            letter-spacing: -1px;
+        }
+
+        .hero h1 span {
+            background: linear-gradient(to right, #fff, var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            max-width: 700px;
+            margin: 0 auto 2rem;
+        }
+
+        .cta-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.8rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-primary {
+            background: var(--accent-purple);
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(168, 85, 247, 0.4);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-purple-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(168, 85, 247, 0.6);
+        }
+
+        .btn-secondary {
+            background: var(--bg-card);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: #171226;
+            border-color: var(--accent-purple);
+            color: #fff;
+        }
+
+        /* Documentation Layout */
+        .doc-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            padding: 2rem;
+            gap: 3rem;
+        }
+
+        /* Sidebar navigation */
+        .sidebar {
+            width: 280px;
+            position: sticky;
+            top: 100px;
+            height: calc(100vh - 140px);
+            overflow-y: auto;
+            padding-right: 1rem;
+        }
+
+        .sidebar-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+        }
+
+        .sidebar-menu li {
+            margin-bottom: 0.5rem;
+        }
+
+        .sidebar-menu a {
+            display: block;
+            padding: 8px 12px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            border-left: 2px solid transparent;
+        }
+
+        .sidebar-menu a:hover, .sidebar-menu a.active {
+            color: var(--accent-purple);
+            background: rgba(168, 85, 247, 0.05);
+            border-left-color: var(--accent-purple);
+            padding-left: 16px;
+        }
+
+        /* Documentation Content Area */
+        .doc-content {
+            flex: 1;
+            max-width: 900px;
+        }
+
+        .doc-section {
+            margin-bottom: 4rem;
+            scroll-margin-top: 100px;
+        }
+
+        .doc-section h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+            color: #fff;
+        }
+
+        .doc-section h3 {
+            font-size: 1.35rem;
+            font-weight: 600;
+            margin: 2rem 0 0.75rem;
+            color: var(--accent-purple);
+        }
+
+        .doc-section p {
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+            font-size: 1.05rem;
+        }
+
+        /* Alert Callouts */
+        .callout {
+            background: rgba(168, 85, 247, 0.05);
+            border-left: 4px solid var(--accent-purple);
+            padding: 1rem 1.5rem;
+            border-radius: 0 8px 8px 0;
+            margin: 1.5rem 0;
+        }
+
+        .callout p {
+            margin: 0;
+            color: var(--text-main);
+            font-size: 0.95rem;
+        }
+
+        /* Code Block Styling */
+        .code-block-wrapper {
+            position: relative;
+            margin: 1rem 0 2rem;
+            background: var(--code-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .copy-btn {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            color: #fff;
+            border-color: var(--accent-purple);
+            background: rgba(168, 85, 247, 0.1);
+        }
+
+        pre {
+            padding: 1.25rem;
+            overflow-x: auto;
+            margin: 0;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: #e5e7eb;
+        }
+
+        /* Basic Syntax Highlighting Colors */
+        .keyword { color: #f43f5e; font-weight: 500; }
+        .string { color: #34d399; }
+        .function { color: #60a5fa; }
+        .comment { color: #6b7280; font-style: italic; }
+        .number { color: #fb923c; }
+        .boolean { color: #c084fc; }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border-color);
+            padding: 3rem 2rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            background: var(--bg-nav);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 968px) {
+            .doc-container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: static;
+                margin-bottom: 2rem;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+                padding-bottom: 1rem;
+            }
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Navigation -->
+    <header>
+        <div class="logo">
+            Aera<span>UI</span>
+        </div>
+        <nav class="nav-links">
+            <a href="#getting-started">Docs</a>
+            <a href="#elements">Components</a>
+            <a href="#global-interfaces">Core API</a>
+            <a href="https://github.com/Sealient/AeroLib" target="_blank">GitHub</a>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="badge">Premium UI Framework</div>
+        <h1>Aera UI Library<br><span>Elevated Roblox Design</span></h1>
+        <p>AeroLib (AeraUI) delivers high-performance layouts featuring modular structural paradigms, custom micro-interactions, dynamic grid arrays, and advanced fluid animations.</p>
+        <div class="cta-buttons">
+            <a href="#getting-started" class="btn btn-primary">Read Documentation</a>
+            <a href="#blueprint" class="btn btn-secondary">View Blueprint</a>
+        </div>
+    </section>
+
+    <!-- Main Content Layout -->
+    <div class="doc-container">
+        
+        <!-- Sidebar Menu -->
+        <aside class="sidebar">
+            <div class="sidebar-title">Framework Core</div>
+            <ul class="sidebar-menu">
+                <li><a href="#getting-started" class="active">Getting Started</a></li>
+                <li><a href="#tabs">1. Dynamic Tabs</a></li>
+            </ul>
+            <div class="sidebar-title" style="margin-top: 1.5rem;">Page Components</div>
+            <ul class="sidebar-menu">
+                <li><a href="#buttons">Buttons</a></li>
+                <li><a href="#toggles">Toggles</a></li>
+                <li><a href="#sliders">Sliders</a></li>
+                <li><a href="#dropdowns">Dropdowns</a></li>
+                <li><a href="#colorpickers">Color Pickers</a></li>
+                <li><a href="#keybinds">Keybinds</a></li>
+                <li><a href="#labels">Labels</a></li>
+            </ul>
+            <div class="sidebar-title" style="margin-top: 1.5rem;">Global Systems</div>
+            <ul class="sidebar-menu">
+                <li><a href="#global-interfaces">Notifications & Modals</a></li>
+                <li><a href="#blueprint">Complete Blueprint</a></li>
+            </ul>
+        </aside>
+
+        <!-- Main Documentation Content -->
+        <main class="doc-content">
+            
+            <!-- Getting Started Section -->
+            <section id="getting-started" class="doc-section">
+                <h2>Getting Started</h2>
+                <p>Integrate AeroLib seamlessly into your runtime ecosystem. The framework uses a performance-optimized web loader configuration to fetch components dynamically.</p>
+                
+                <h3>Loading the UI Library</h3>
+                <p>Acquire the source logic directly via an HTTP payload acquisition engine structure:</p>
+                
+                <div class="code-block-wrapper">
+                    <div class="code-header"><span>Lua Script</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+                    <pre><code><span class="keyword">local</span> lib = <span class="function">loadstring</span>(game:<span class="function">HttpGet</span>(<span class="string">"https://raw.githubusercontent.com/Sealient/AeroLib/refs/heads/main/AeraUI.lua"</span>))()</code></pre>
+                </div>
+
+                <h3>Initializing the Window Frame</h3>
+                <p>Instantiate your master root wrapper container matrix using the standard <code>.new()</code> constructor framework hook. By default, the layout visibility toggle binds explicitly to <strong>Right Control (<code>Enum.KeyCode.RightControl</code>)</strong>.</p>
+                
+                <div class="code-block-wrapper">
+                    <div class="code-header"><span>Lua Script</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+                    <pre><code><span class="keyword">local</span> UI = lib.<span class="function">new</span>(<span class="string">"MY APEX CORE"</span>)</code></pre>
+                </div>
+            </section>
+
+            <!-- Section 1: Tabs -->
+            <section id="tabs" class="doc-section">
+                <h2>1. Creating Tabs</h2>
+                <p>Tabs isolate individual operation windows into dynamic canvas container states. Elements leverage staggered render timings and elegant hover styling matrices.</p>
+                
+                <div class="code-block-wrapper">
+                    <div class="code-header"><span>Lua Script</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+                    <pre><code><span class="keyword">local</span> combatTab = UI:<span class="function">CreateTab</span>(<span class="string">"Combat"</span>)
+<span class="keyword">local</span> visualTab = UI:<span class="function">CreateTab</span>(<span class="string">"Visuals"</span>)</code></pre>
+                </div>
+
+                <div class="callout">
+                    <p><strong>Note:</strong> AeroLib automatically builds and locks operational utility profiles (<code>Settings</code> and <code>Credits</code> profiles) cleanly layouted at the baseline position of your configuration canvas array.</p>
+                </div>
+            </section>
+
+            <!-- Section 2: Page Elements -->
+            <section id="elements" class="doc-section">
+                <h2>2. Adding Page Elements</h2>
+                <p>Append modules directly onto your instantiated navigation elements using the framework methods detailed below.</p>
+                
+                <!-- Buttons -->
+                <div id="buttons">
+                    <h3>Buttons</h3>
+                    <p>Interactive matte micro-cards optimized to structure two elements across each responsive layout row.</p>
+                    <div class="code-block-wrapper">
+                        <div class="code-header"><span>Lua Script</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+                        <pre><code>combatTab:<span class="function">AddButton</span>(<span class="string">"Trigger KillAura"</span>, <span class="keyword">function</span>()
+    <span class="function">print</span>(<span class="string">"KillAura loop engaged."</span>)
+<span class="keyword">end</span>)</code></pre>
+                    </div>
+                </div>
+
+                <!-- Toggles -->
+                <div id="toggles">
+                    <h3>Toggles</h3>
+                    <p>Decoupled floating toggle structures linked directly to runtime state boolean checks.</p>
+                    <div class="code-block-wrapper">
+                        <div class="code-header"><span>Lua Script</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+                        <pre><code>combatTab:<span class="function">AddToggle</span>(<span class="string">"Auto-Farm Status"</span>, <span class="boolean">false</span>, <span class="keyword">function</span>(state)
+    <span class="function">print</span>(<span class="string">"Auto-Farm is now: "</span>, state <span class="keyword">and</span> <span class="string">"ENABLED"</span> <span class="keyword">or</span> <span class="string">"DISABLED"</span>)
+<span class="keyword">end</span>)</code></pre>
+                    </div>
+                </div>
+
+                <!-- Sliders -->
+                <div id="sliders">
+                    <h3>Sliders</h3>
+                    <p>Full-width control matrices offering drag tracking and precise direct-click track positioning.</p>
+                    <div class="code-block-wrapper">
+                        <div class="code-header"><span>Lua Script</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+                        <pre><code>visualTab:<span class="function">AddSlider</span>(<span class="string">"FOV Boundary"</span>, <span class="number">30</span>, <span class="number">120</span>, <span class="number">70</span>, <span class="keyword">function</span>(value)
+    <span class="function">print</span>(<span class="string">"FOV updated to: "</span>, value)
+<span class="keyword">end</span>)</code></pre>
+                    </div>
+                </div>
+
+                <!-- Dropdowns -->
+                <div id="dropdowns">
+                    <h3>Dropdowns</h3>
+                    <p>Fluid array multi-choice overlays featuring layer safety bounding logic masks.</p>
+                    <div class="code-block-wrapper">
+                        <div class="code-header"><span>Lua Script</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+                        <pre><code>visualTab:<span class="function">AddDropdown</span>(<span class="string">"Chams Style"</span>, {<span class="string">"Wireframe"</span>, <span class="string">"Filled matte"</span>, <span class="string">"Thermal Glow"</span>}, <span class="string">"Filled matte"</span>, <span class="keyword">function</span>(selected)
+    <span class="function">print</span>(<span class="string">"Rendering type selected: "</span>, selected)
+<span class="keyword">end</span>)</code></pre>
+                    </div>
+                </div>
+
+                <!-- Color Pickers -->
+                <div id="colorpickers">
+                    <h3>Color Pickers</h3>
+                    <p>Extended calibration matrices supplying HEX visual streams, precision canvas selectors, and 7-node hue maps.</p>
+                    <div class="code-block-wrapper">
+                        <div class="code-header"><span>Lua Script</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+                        <pre><code>visualTab:<span class="function">AddColorPicker</span>(<span class="string">"ESP Team Color"</span>, Color3.<span class="function">fromRGB</span>(<span class="number">168</span>, <span class="number">85</span>, <span class="number">247</span>), <span class="keyword">function</span>(color)
+    <span class="function">print</span>(<span class="string">"New Color Matrix: "</span>, color)
+<span class="keyword">end</span>)</code></pre>
+                    </div>
+                </div>
+
+                <!-- Keybinds -->
+                <div id="keybinds">
+                    <h3>Keybinds</h3>
+                    <p>Advanced listener inputs supporting manual input configurations, dynamically scalable font fields, and clearing methods.</p>
+                    <div class="code-block-wrapper">
+                        <div class="code-header"><span>Lua Script</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+                        <pre><code><span class="keyword">local</span> keybindEx = combatTab:<span class="function">AddKeybind</span>(<span class="string">"Aimlock Key"</span>, Enum.KeyCode.E, <span class="keyword">function</span>(chosenKey)
+    <span class="function">print</span>(<span class="string">"Aimlock key mapped to: "</span> .. chosenKey.Name)
+<span class="keyword">end</span>)
+
+<span class="comment">-- Available API controls:</span>
+<span class="comment">-- keybindEx:SetKey(Enum.KeyCode.Q)</span>
+<span class="comment">-- print(keybindEx:GetKey())</span></code></pre>
+                    </div>
+                </div>
+
+                <!-- Labels -->
+                <div id="labels">
+                    <h3>Labels</h3>
+                    <p>Basic full-span inline text boxes framework blocks designed to print setup info alerts or parameters details.</p>
+                    <div class="code-block-wrapper">
+                        <div class="code-header"><span>Lua Script</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+                        <pre><code>combatTab:<span class="function">AddLabel</span>(<span class="string">"⚠️ Ensure your FPS is stabilized above 60 before execution."</span>)</code></pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 3: Global Interfaces -->
+            <section id="global-interfaces" class="doc-section">
+                <h2>3. Global Framework Core Interfaces</h2>
+                <p>Trigger complex global systems using commands bound to the parent interface variable returned during creation setup.</p>
+                
+                <h3>System Notifications</h3>
+                <p>Pops fluid contextual indicators near the baseline interface canvas layer, or pipes text updates via default legacy layers. Types: <code>"Success"</code>, <code>"Error"</code>, <code>"Info"</code>, <code>"Warning"</code>, <code>"Premium"</code>, <code>"Native"</code>.</p>
+                <div class="code-block-wrapper">
+                    <div class="code-header"><span>Lua Script</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+                    <pre><code><span class="comment">-- Custom UI Obsidian notification card</span>
+UI:<span class="function">Notification</span>(<span class="string">"Success"</span>, <span class="string">"Configuration protocols loaded cleanly."</span>, <span class="number">5</span>)
+
+<span class="comment">-- Roblox CoreGui system notification fallback</span>
+UI:<span class="function">Notification</span>(<span class="string">"Native"</span>, <span class="string">"Script engine verified successfully."</span>, <span class="number">4</span>)</code></pre>
+                </div>
+
+                <h3>Modal Popups</h3>
+                <p>Locks input interaction focal frames, scaling automatically with your variable configurations while sliding out nicely when selection elements fire.</p>
+                <div class="code-block-wrapper">
+                    <div class="code-header"><span>Lua Script</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+                    <pre><code>UI:<span class="function">Popup</span>({
+    Title = <span class="string">"Execute System Override?"</span>,
+    Description = <span class="string">"This configuration will rewrite your current local profile settings. Proceed with caution."</span>,
+    Options = {
+        {
+            Title = <span class="string">"Abort"</span>,
+            Type = <span class="string">"Secondary"</span>,
+            Callback = <span class="keyword">function</span>() <span class="function">print</span>(<span class="string">"Override cancelled."</span>) <span class="keyword">end</span>
+        },
+        {
+            Title = <span class="string">"Confirm Override"</span>,
+            Type = <span class="string">"Danger"</span>,
+            Callback = <span class="keyword">function</span>() <span class="function">print</span>(<span class="string">"Override authorized."</span>) <span class="keyword">end</span>
+        }
+    }
+})</code></pre>
+                </div>
+
+                <h3>Framework Destruction</h3>
+                <p>Cleans the interface stack completely, detaching processing sequences, garbage collecting, and disconnecting environmental triggers.</p>
+                <div class="code-block-wrapper">
+                    <div class="code-header"><span>Lua Script</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+                    <pre><code>UI:<span class="function">Destroy</span>()</code></pre>
+                </div>
+            </section>
+
+            <!-- Complete Blueprint Section -->
+            <section id="blueprint" class="doc-section">
+                <h2>Complete Example Blueprint</h2>
+                <p>Implement this deployment model configuration block to evaluate your dynamic AeraUI structural asset array features instantly:</p>
+                <div class="code-block-wrapper">
+                    <div class="code-header"><span>Lua Script</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+                    <pre><code><span class="keyword">local</span> lib = <span class="function">loadstring</span>(game:<span class="function">HttpGet</span>(<span class="string">"https://raw.githubusercontent.com/Sealient/AeroLib/refs/heads/main/AeraUI.lua"</span>))()
+<span class="keyword">local</span> UI = lib.<span class="function">new</span>(<span class="string">"Vortex Hub"</span>)
+
+UI:<span class="function">Notification</span>(<span class="string">"Premium"</span>, <span class="string">"Welcome back, Premium User!"</span>, <span class="number">4</span>)
+
+<span class="keyword">local</span> tab1 = UI:<span class="function">CreateTab</span>(<span class="string">"Main Actions"</span>)
+
+tab1:<span class="function">AddLabel</span>(<span class="string">"🌟 Core Parameters"</span>)
+
+tab1:<span class="function">AddToggle</span>(<span class="string">"God Mode"</span>, <span class="boolean">false</span>, <span class="keyword">function</span>(toggled)
+    <span class="function">print</span>(<span class="string">"Godmode state: "</span>, toggled)
+<span class="keyword">end</span>)
+
+tab1:<span class="function">AddSlider</span>(<span class="string">"WalkSpeed Mod"</span>, <span class="number">16</span>, <span class="number">250</span>, <span class="number">16</span>, <span class="keyword">function</span>(val)
+    workspace.CurrentCamera.FieldOfView = val <span class="comment">-- Example execution logic</span>
+<span class="keyword">end</span>)
+
+tab1:<span class="function">AddButton</span>(<span class="string">"Dismantle Project Instance"</span>, <span class="keyword">function</span>()
+    UI:<span class="function">Popup</span>({
+        Title = <span class="string">"Clean Exit?"</span>,
+        Description = <span class="string">"Are you sure you want to completely unload this UI?"</span>,
+        Options = {
+            { Title = <span class="string">"Cancel"</span>, Type = <span class="string">"Secondary"</span> },
+            { Title = <span class="string">"Unload Framework"</span>, Type = <span class="string">"Danger"</span>, Callback = <span class="keyword">function</span>() UI:<span class="function">Destroy</span>() <span class="keyword">end</span> }
+        }
+    })
+<span class="keyword">end</span>)</code></pre>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Footer Area -->
+    <footer>
+        <p>&copy; 2026 AeroLib. Engineered for precision performance interfaces.</p>
+    </footer>
+
+    <!-- Interactive Navigation and Copy Utilities Scripts -->
+    <script>
+        // Simple Copy Action Utility
+        function copyCode(button) {
+            const pre = button.parentElement.nextElementSibling;
+            const text = pre.innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                button.innerText = "Copied!";
+                button.style.borderColor = "#34d399";
+                button.style.color = "#34d399";
+                setTimeout(() => {
+                    button.innerText = "Copy";
+                    button.style.borderColor = "var(--border-color)";
+                    button.style.color = "var(--text-muted)";
+                }, 2000);
+            });
+        }
+
+        // Sidebar Navigation Highlight Engine tracking scroll states
+        const sections = document.querySelectorAll('.doc-section, [id]');
+        const navLi = document.querySelectorAll('.sidebar-menu a');
+        
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (pageYOffset >= sectionTop - 120) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLi.forEach(a => {
+                a.classList.remove('active');
+                if (a.getAttribute('href').includes(current) && current !== '') {
+                    a.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
