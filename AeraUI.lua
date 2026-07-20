@@ -62,31 +62,11 @@ local NOTIFICATION_TYPES = {
 	}
 }
 
--- Safe CoreGui or PlayerGui Target Acquisition
+-- PlayerGui Target Acquisition for Notifications
 local function getNotificationScreen()
-	local ScreenGui
-
-	-- 1. Safely attempt to check CoreGui (wrapped in a pcall to prevent permission crashes)
-	local success, coreGuiService = pcall(function()
-		return game:GetService("CoreGui")
-	end)
-
-	if success and coreGuiService then
-		ScreenGui = coreGuiService:FindFirstChild("UILibrary_Notifications")
-		if not ScreenGui then
-			ScreenGui = Instance.new("ScreenGui")
-			ScreenGui.Name = "UILibrary_Notifications"
-			ScreenGui.DisplayOrder = 999999
-			ScreenGui.ResetOnSpawn = false
-			ScreenGui.Parent = coreGuiService
-		end
-		return ScreenGui
-	end
-
-	-- 2. Fallback to PlayerGui seamlessly if running as a standard LocalScript
 	local playerGui = LocalPlayer:WaitForChild("PlayerGui", 5)
 	if playerGui then
-		ScreenGui = playerGui:FindFirstChild("UILibrary_Notifications")
+		local ScreenGui = playerGui:FindFirstChild("UILibrary_Notifications")
 		if not ScreenGui then
 			ScreenGui = Instance.new("ScreenGui")
 			ScreenGui.Name = "UILibrary_Notifications"
@@ -97,7 +77,7 @@ local function getNotificationScreen()
 		return ScreenGui
 	end
 
-	error("UILibrary: Failed to acquire a valid UI parent container (PlayerGui/CoreGui missing).")
+	error("UILibrary: Failed to acquire PlayerGui.")
 end
 
 -- Positional Layout Recalculation Engine
@@ -133,12 +113,12 @@ end
 -- =======================================================================
 function UILibrary.new(titleText: string)
 	local self = setmetatable({}, UILibrary)
+	self.Tabs = {}
+	self.TabCount = 0
 
 	-- =======================================================
-	-- PRODUCTION RE-ANCHOR: CRUNCH-FREE COREGUI ARCHITECTURE
+	-- PRODUCTION RE-ANCHOR: PLAYERGUI ARCHITECTURE
 	-- =======================================================
-	local CoreGui = game:GetService("CoreGui")
-	
 	-- 1. Root ScreenGui Layer (Live Environment Optimization)
 	local screenGui = Instance.new("ScreenGui")
 	screenGui.Name = "PremiumUILibrary"
@@ -146,32 +126,28 @@ function UILibrary.new(titleText: string)
 	screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 	screenGui.IgnoreGuiInset = true 
 	screenGui.ClipToDeviceSafeArea = false 
-	
+
 	-- CRITICAL BLUR BUSTERS FOR LIVE ROBLOX:
 	screenGui.SelectionGroup = true -- Forces individual layer culling optimization
 	screenGui.AutoLocalize = false   -- Prevents localized system fonts from rewriting/smudging text glyphs
 
-	-- Protect the UI from being detected or modified easily by external local scripts
-	if syn and syn.protect_gui then
-		syn.protect_gui(screenGui)
-	end
-	screenGui.Parent = CoreGui
+	screenGui.Parent = PlayerGui
 	self.ScreenGui = screenGui
 
 	-- 2. Main Window Shell (Crisp Sub-Pixel Alignment)
 	local mainFrame = Instance.new("Frame")
 	mainFrame.Name = "MainFrame"
-	
+
 	-- Even-numbered sizes aligned perfectly to the center monitor coordinates
 	mainFrame.Size = UDim2.new(0, 600, 0, 380)
 	mainFrame.Position = UDim2.new(0.5, -300, 0.5, -190) 
-	
+
 	mainFrame.BackgroundColor3 = THEME.Background
 	mainFrame.BorderSizePixel = 0
 	mainFrame.Active = true
 	mainFrame.Visible = false
 	mainFrame.Parent = screenGui
-	
+
 	addCorner(mainFrame, 10)
 	addStroke(mainFrame, THEME.Border, 1)
 
@@ -351,22 +327,108 @@ function UILibrary.new(titleText: string)
 	self.ActiveTab = nil
 
 	-- =======================================================
-	-- PREBUILT RECTIFICATION: LIVE ACCESSIBLE TOGGLE HOOKS
+	-- ANIMATION ENGINE: POSITION-AWARE DISPLAY TOGGLE
 	-- =======================================================
 	local UI_Visible = true
+	local isAnimating = false
 	local MenuBind = Enum.KeyCode.RightControl
 
+	-- Lighting Blur Reference
+	local menuBlur = game:GetService("Lighting"):FindFirstChild("AeraUI_MenuBlur")
+	if not menuBlur then
+		menuBlur = Instance.new("BlurEffect")
+		menuBlur.Name = "AeraUI_MenuBlur"
+		menuBlur.Size = 0
+		menuBlur.Parent = game:GetService("Lighting")
+	end
+
+	local function toggleUI(show: boolean)
+		if isAnimating then return end
+		isAnimating = true
+
+		-- Read wherever the player currently dragged the window
+		local currentPos = mainFrame.Position
+		local offsetPos  = UDim2.new(
+			currentPos.X.Scale, 
+			currentPos.X.Offset, 
+			currentPos.Y.Scale, 
+			currentPos.Y.Offset + 14 -- Subtle 14px downward offset for smooth slide
+		)
+
+		if show then
+			UI_Visible = true
+			mainFrame.Visible = true
+
+			-- Start 14px down & transparent from current dragged position
+			mainFrame.Position = offsetPos
+			if mainFrame:IsA("CanvasGroup") then
+				mainFrame.GroupTransparency = 1
+			end
+
+			-- Blur Fade In
+			menuBlur.Enabled = true
+			TweenService:Create(menuBlur, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+				Size = 8
+			}):Play()
+
+			-- Window Slide Up + Canvas Fade In
+			if mainFrame:IsA("CanvasGroup") then
+				TweenService:Create(mainFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+					GroupTransparency = 0
+				}):Play()
+			end
+
+			local openTween = TweenService:Create(mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {
+				Position = currentPos
+			})
+
+			openTween:Play()
+			openTween.Completed:Wait()
+			isAnimating = false
+		else
+			UI_Visible = false
+
+			-- Blur Fade Out
+			TweenService:Create(menuBlur, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+				Size = 0
+			}):Play()
+
+			-- Window Slide Down + Canvas Fade Out
+			if mainFrame:IsA("CanvasGroup") then
+				TweenService:Create(mainFrame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+					GroupTransparency = 1
+				}):Play()
+			end
+
+			local closeTween = TweenService:Create(mainFrame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+				Position = offsetPos
+			})
+
+			closeTween:Play()
+			closeTween.Completed:Wait()
+
+			-- Restore exact dragged position before hiding frame
+			mainFrame.Position = currentPos
+			mainFrame.Visible = false
+			menuBlur.Enabled = false
+			isAnimating = false
+		end
+	end
+
+	-- Keybind Listener
 	UserInputService.InputBegan:Connect(function(input, gameProcessed)
 		if gameProcessed then return end
 		if input.KeyCode == MenuBind then
-			UI_Visible = not UI_Visible
-			mainFrame.Visible = UI_Visible
+			toggleUI(not UI_Visible)
 		end
 	end)
 
-	-- Settings Tab Build Profile
+	-- 1. Settings Tab Profile
 	local settingsTab = self:CreateTab("Settings")
-	-- TO THIS:
+	if self.Tabs["Settings"] and self.Tabs["Settings"].Button then
+		self.Tabs["Settings"].Button.LayoutOrder = 9998 -- Pinned near bottom
+	end
+
 	settingsTab:AddKeybind("Toggle UI Menu Visibility", MenuBind, function(chosenKey)
 		MenuBind = chosenKey
 		self:Notification("Info", "Menu visibility keybind updated to: " .. chosenKey.Name, 3)
@@ -387,8 +449,12 @@ function UILibrary.new(titleText: string)
 		})
 	end)
 
-	-- Rebuilt Elite Credits Tab Profile
+	-- 2. Credits Tab Profile
 	local creditsTab = self:CreateTab("Credits")
+	if self.Tabs["Credits"] and self.Tabs["Credits"].Button then
+		self.Tabs["Credits"].Button.LayoutOrder = 9999 -- Pinned at absolute bottom
+	end
+
 	creditsTab:AddLabel("✨ ─── AERAMONT ARCHITECTURE ─── ✨")
 	creditsTab:AddLabel("» Project Canvas: AeraUI")
 	creditsTab:AddLabel("» Engineering: seally ♡")
@@ -407,6 +473,33 @@ function UILibrary.new(titleText: string)
 	creditsTab:AddLabel("📦 ─── BUILD SPECIFICATIONS ─── 📦")
 	creditsTab:AddLabel("» System Release: Luna Core [v1.0.0]")
 	creditsTab:AddLabel("────────────────────────────────────────")
+
+	creditsTab:AddButton("View Patch Notes", function()
+		local patchNotesText = "couldnt pull"
+
+		-- Safe wrapper that works in both Studio and Executors
+		local success, response = pcall(function()
+			if game:GetService("RunService"):IsStudio() then
+				-- Roblox Studio method (Requires "Allow HTTP Requests" in Game Settings)
+				return game:GetService("HttpService"):GetAsync("https://raw.githubusercontent.com/Sealient/AeroLib/refs/heads/main/patchnotes.txt")
+			else
+				-- Executor method
+				return game:HttpGet("https://raw.githubusercontent.com/Sealient/AeroLib/refs/heads/main/patchnotes.txt")
+			end
+		end)
+
+		if success and response and #response > 0 then
+			patchNotesText = response
+		end
+
+		self:Popup({
+			Title = "Patch Notes",
+			Description = patchNotesText,
+			Options = {
+				{ Title = "Close", Type = "Primary" }
+			}
+		})
+	end)
 
 	-- =======================================================
 	-- CINEMATIC LOADING INTERACTIVE LAYER (MINIMALIST WIRE)
@@ -522,17 +615,21 @@ function UILibrary.new(titleText: string)
 	return self
 end
 
--- Premium Tab Creator (Fully Updated with Black Backplate and Neon-Purple Outline swap)
+-- Premium Tab Creator (Fully Updated with Black Backplate, Neon-Purple Outline & Fixed Layering)
 function UILibrary:CreateTab(tabName: string)
 	local tabData = {}
 	tabData.Active = false -- Track this tab's active state inside its own metadata
+
+	-- Increments tab count for sequential layout ordering
+	self.TabCount = (self.TabCount or 0) + 1
+	local currentOrder = self.TabCount
 
 	-- Count existing tabs to calculate the delayed stagger sequence
 	local tabCount = 0
 	for _ in pairs(self.Tabs) do
 		tabCount = tabCount + 1
 	end
-	local staggerDelay = tabCount * .5 -- 0.15s delay step per tab
+	local staggerDelay = tabCount * .5 -- 0.5s delay step per tab
 
 	-- Rectangular Tab Navigation Button (Starts fully invisible)
 	local tabButton = Instance.new("TextButton")
@@ -548,6 +645,8 @@ function UILibrary:CreateTab(tabName: string)
 	tabButton.Font = THEME.Font
 	tabButton.TextXAlignment = Enum.TextXAlignment.Left
 	tabButton.Parent = self.TabList
+	tabButton.LayoutOrder = currentOrder
+	tabButton.ZIndex = 2 -- FIX: Forces tab buttons to stay layered above background panels
 	addCorner(tabButton, 4)
 
 	-- Outer Edge Border Stroke (Starts hidden)
@@ -578,6 +677,7 @@ function UILibrary:CreateTab(tabName: string)
 	pageContainer.ScrollBarThickness = 0
 	pageContainer.Visible = false
 	pageContainer.Parent = self.DisplayArea
+	pageContainer.ZIndex = 1 -- FIX: Keeps scrolling content layered cleanly beneath navigation overlays
 
 	-- EXACT CUSTOM PADDING ADJUSTMENT: 3px Left, 1px Right
 	local pagePadding = Instance.new("UIPadding")
@@ -666,7 +766,6 @@ function UILibrary:CreateTab(tabName: string)
 				table.insert(visualElements, row)
 			elseif row:IsA("Frame") and string.find(row.Name, "_DropdownRow") then
 				table.insert(visualElements, row)
-				-- ADD THIS LINE TO GATHER COLOR PICKERS:
 			elseif row:IsA("Frame") and string.find(row.Name, "_PickerRow") then
 				table.insert(visualElements, row)
 			end
@@ -680,14 +779,12 @@ function UILibrary:CreateTab(tabName: string)
 				local isToggle = string.find(element.Name, "_Toggle") ~= nil
 
 				if isToggle then
-					-- --- Custom Toggle Component Animation ---
-					element.BackgroundTransparency = 1 -- Keep outer wrapper transparent
+					element.BackgroundTransparency = 1 
 
 					local textBg = element:FindFirstChild("TextBackground")
 					local box = element:FindFirstChild("Box")
 
 					if textBg then
-						-- Pre-reset Text Card elements
 						textBg.BackgroundTransparency = 1
 						local label = textBg:FindFirstChild("Label")
 						if label then label.TextTransparency = 1 end
@@ -695,11 +792,9 @@ function UILibrary:CreateTab(tabName: string)
 						local textStroke = textBg:FindFirstChildWhichIsA("UIStroke")
 						if textStroke then textStroke.Transparency = 1 end
 
-						-- Pre-reset Checkbox elements
 						local checkmark = box and box:FindFirstChild("Checkmark")
 						local boxStroke = box and box:FindFirstChildWhichIsA("UIStroke")
 
-						-- Check if the toggle was active by examining checkmark state
 						local isCurrentlyToggled = false
 						if checkmark and checkmark.TextTransparency < 0.5 then
 							isCurrentlyToggled = true
@@ -709,9 +804,7 @@ function UILibrary:CreateTab(tabName: string)
 						if boxStroke then boxStroke.Transparency = 1 end
 						if checkmark then checkmark.TextTransparency = 1 end
 
-						-- Staggered Fade-In
 						task.delay(delayTime, function()
-							-- Fade in text card background, label, and stroke
 							TweenService:Create(textBg, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0}):Play()
 							if label then
 								TweenService:Create(label, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
@@ -720,7 +813,6 @@ function UILibrary:CreateTab(tabName: string)
 								TweenService:Create(textStroke, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Transparency = 0}):Play()
 							end
 
-							-- Fade in visual checkbox
 							if box then
 								TweenService:Create(box, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0}):Play()
 								if boxStroke then
@@ -733,7 +825,6 @@ function UILibrary:CreateTab(tabName: string)
 						end)
 					end
 				else
-					-- --- Standard TextButton Animation ---
 					element.BackgroundTransparency = 1
 					element.TextTransparency = 1
 
@@ -755,7 +846,6 @@ function UILibrary:CreateTab(tabName: string)
 				end
 
 			elseif element:IsA("TextLabel") then
-				-- --- Standard TextLabel Animation ---
 				element.TextTransparency = 1
 				task.delay(delayTime, function()
 					TweenService:Create(element, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
@@ -763,7 +853,6 @@ function UILibrary:CreateTab(tabName: string)
 					}):Play()
 				end)
 
-				-- --- Custom Slider Animation ---
 			elseif element:IsA("Frame") and string.find(element.Name, "_SliderRow") then
 				local title = element:FindFirstChild("Title")
 				local ic = element:FindFirstChild("InteractContainer")
@@ -773,7 +862,6 @@ function UILibrary:CreateTab(tabName: string)
 				local fl = trk and trk:FindFirstChild("Fill")
 				local strk = trk and trk:FindFirstChildWhichIsA("UIStroke")
 
-				-- Forcefully hide them right before the animation tracks play
 				if title then title.TextTransparency = 1 end
 				if currentVal then currentVal.TextTransparency = 1 end
 				if maxVal then maxVal.TextTransparency = 1 end
@@ -790,7 +878,6 @@ function UILibrary:CreateTab(tabName: string)
 					if strk then TweenService:Create(strk, TweenInfo.new(0.3), {Transparency = 0}):Play() end
 				end)
 
-				-- --- Custom Dropdown Animation ---
 			elseif element:IsA("Frame") and string.find(element.Name, "_DropdownRow") then
 				local hdr = element:FindFirstChild("Header")
 				local title = hdr and hdr:FindFirstChild("Title")
@@ -798,7 +885,6 @@ function UILibrary:CreateTab(tabName: string)
 				local chv = hdr and hdr:FindFirstChild("Chevron")
 				local hStroke = hdr and hdr:FindFirstChildWhichIsA("UIStroke")
 
-				-- Forcefully hide the header background and its sub-elements right before playback
 				if hdr then hdr.BackgroundTransparency = 1 end
 				if title then title.TextTransparency = 1 end
 				if valDisp then valDisp.TextTransparency = 1 end
@@ -812,7 +898,7 @@ function UILibrary:CreateTab(tabName: string)
 					if chv then TweenService:Create(chv, TweenInfo.new(0.3), {TextTransparency = 0}):Play() end
 					if hStroke then TweenService:Create(hStroke, TweenInfo.new(0.3), {Transparency = 0}):Play() end
 				end)
-				-- --- Custom Color Picker Animation ---
+
 			elseif element:IsA("Frame") and string.find(element.Name, "_PickerRow") then
 				local hdr = element:FindFirstChild("Header")
 				local title = hdr and hdr:FindFirstChild("Title")
@@ -821,7 +907,6 @@ function UILibrary:CreateTab(tabName: string)
 				local indStroke = indicator and indicator:FindFirstChildWhichIsA("UIStroke")
 				local hStroke = hdr and hdr:FindFirstChildWhichIsA("UIStroke")
 
-				-- Hide them forcefully before revealing
 				if hdr then hdr.BackgroundTransparency = 1 end
 				if title then title.TextTransparency = 1 end
 				if info then info.TextTransparency = 1 end
@@ -841,19 +926,17 @@ function UILibrary:CreateTab(tabName: string)
 		end
 	end
 
-	-- Expose activations inside Tab metadata so we can trigger them remotely/automatically
+	-- Expose activations inside Tab metadata
 	tabData.Activate = activate
 	tabData.Deactivate = deactivate
 
 	-- Tab Connection Handler
 	tabButton.MouseButton1Click:Connect(function()
-		-- 1. Deactivate all other registered tabs
 		for otherTabName, otherTabData in pairs(self.Tabs) do
 			if otherTabName ~= tabName then
 				otherTabData.Deactivate()
 			end
 		end
-		-- 2. Activate this tab
 		activate()
 	end)
 
@@ -891,7 +974,7 @@ function UILibrary:CreateTab(tabName: string)
 
 	local tabMethods = {}
 	local elementCount = 0
-	local currentGridRow: Frame? = nil -- Track the active 2-column container
+	local currentGridRow: Frame? = nil
 
 	-- Helper function to generate a clean, horizontal 2-column row container
 	local function createNewGridRow()
@@ -899,16 +982,17 @@ function UILibrary:CreateTab(tabName: string)
 
 		local rowFrame = Instance.new("Frame")
 		rowFrame.Name = "GridRow_" .. elementCount
-		rowFrame.Size = UDim2.new(1, 0, 0, 38) -- Match default button height
+		rowFrame.Size = UDim2.new(1, 0, 0, 38)
 		rowFrame.BackgroundTransparency = 1
 		rowFrame.BorderSizePixel = 0
 		rowFrame.LayoutOrder = elementCount
 		rowFrame.Parent = pageContainer
+		rowFrame.ZIndex = 2 -- FIX: Restricts grid row elements from overlapping parent frame boundaries
 
 		local rowLayout = Instance.new("UIListLayout")
 		rowLayout.FillDirection = Enum.FillDirection.Horizontal
 		rowLayout.SortOrder = Enum.SortOrder.LayoutOrder
-		rowLayout.Padding = UDim.new(0, 10) -- Distance between the left and right elements
+		rowLayout.Padding = UDim.new(0, 10)
 		rowLayout.Parent = rowFrame
 
 		currentGridRow = rowFrame
@@ -1153,7 +1237,7 @@ function UILibrary:CreateTab(tabName: string)
 			task.spawn(callback, toggled)
 		end)
 	end
-	
+
 	-- Content Page Sliders (Full-width row, left-aligned text, right-aligned slider with values)
 	function tabMethods:AddSlider(text: string, min: number, max: number, default: number, callback: (number) -> ())
 		-- Break the grid chain so the slider occupies a clean full-row slot
@@ -1335,7 +1419,7 @@ function UILibrary:CreateTab(tabName: string)
 			end
 		end)
 	end
-	
+
 	-- Content Page Dropdowns (Full-width row, smoothly expanding selection list)
 	function tabMethods:AddDropdown(text: string, options: {string}, default: string?, callback: (string) -> ())
 		-- Break the grid chain so the dropdown occupies a clean full-row slot
@@ -1568,7 +1652,7 @@ function UILibrary:CreateTab(tabName: string)
 			TweenService:Create(chevron, TweenInfo.new(0.15), {TextColor3 = THEME.TextMuted}):Play()
 		end)
 	end
-	
+
 	-- Content Page Color Pickers (Premium design, multi-readout, native rainbow spectrum)
 	function tabMethods:AddColorPicker(text: string, defaultColor: Color3, callback: (Color3) -> ())
 		currentGridRow = nil 
@@ -1871,35 +1955,27 @@ function UILibrary:CreateTab(tabName: string)
 			TweenService:Create(infoLabel, TweenInfo.new(0.15), {TextColor3 = THEME.TextMuted}):Play()
 		end)
 	end
-	
+
 	-- Add Interactive Keybind Component to tabMethods
-	function tabMethods:AddKeybind(text: string, defaultKey: Enum.KeyCode, callback: (Enum.KeyCode) -> ())
-		local currentKey = defaultKey
+	function tabMethods:AddKeybind(text: string, defaultKey: Enum.KeyCode | Enum.UserInputType, callback: (Enum.KeyCode | Enum.UserInputType) -> ())
+		local currentKey = defaultKey or Enum.KeyCode.Unknown
 		local isBinding = false
 
-		-- 1. Resolve Parent Container Path dynamically from the grid system
-		if not currentGridRow then
-			createNewGridRow()
-		end
-		local pageContainer = currentGridRow.Parent
+		-- 1. Resolve Target Page Container
+		local targetPage = pageContainer
 
-		-- Force a grid break so subsequent buttons start on a brand new clean row
-		createNewGridRow()
-
-		-- 2. Main Component Container Row (Full-width card layout)
+		-- 2. Main Component Container Row
 		local keybindRow = Instance.new("Frame")
 		keybindRow.Name = text .. "_KeybindContainer"
 		keybindRow.Size = UDim2.new(1, 0, 0, 38)
 		keybindRow.BackgroundColor3 = THEME.Surface or Color3.fromRGB(18, 18, 22)
 		keybindRow.BorderSizePixel = 0
-		keybindRow.LayoutOrder = #pageContainer:GetChildren()
-		keybindRow.Parent = pageContainer
+		keybindRow.Parent = targetPage
 		addCorner(keybindRow, 5)
 
-		-- Match your clean matte charcoal resting outline style
 		local cardStroke = addStroke(keybindRow, Color3.fromRGB(0, 0, 0), 1)
 
-		-- Component Label Text
+		-- Component Label
 		local label = Instance.new("TextLabel")
 		label.Name = "Label"
 		label.Size = UDim2.new(1, -120, 1, 0)
@@ -1916,87 +1992,146 @@ function UILibrary:CreateTab(tabName: string)
 		local bindBtn = Instance.new("TextButton")
 		bindBtn.Name = "BindButton"
 		bindBtn.Size = UDim2.new(0, 80, 0, 24)
-		bindBtn.Position = UDim2.new(1, -92, 0.5, -12)
+		bindBtn.Position = UDim2.new(1, -12, 0.5, 0)
+		bindBtn.AnchorPoint = Vector2.new(1, 0.5)
 		bindBtn.BackgroundColor3 = THEME.Background or Color3.fromRGB(13, 13, 16)
-		bindBtn.Text = currentKey.Name
 		bindBtn.TextColor3 = THEME.Accent or Color3.fromRGB(168, 85, 247) 
 		bindBtn.TextSize = 11
 		bindBtn.Font = Enum.Font.GothamBold
 		bindBtn.AutoButtonColor = false
 		bindBtn.Parent = keybindRow
 		addCorner(bindBtn, 4)
+
 		local btnStroke = addStroke(bindBtn, Color3.fromRGB(35, 35, 40), 1)
 
-		-- 4. Dynamic Visual State Logic
-		local function updateBindingState(binding: boolean)
+		-- 4. Helper Function: Convert Enum to Readable Short Name
+		local function getKeyName(key: Enum.KeyCode | Enum.UserInputType): string
+			if not key or key == Enum.KeyCode.Unknown then
+				return "None"
+			end
+
+			local name = key.Name
+			local aliases = {
+				["MouseButton1"] = "MB1",
+				["MouseButton2"] = "MB2",
+				["MouseButton3"] = "MB3",
+				["RightControl"] = "R-Ctrl",
+				["LeftControl"]  = "L-Ctrl",
+				["RightShift"]   = "R-Shift",
+				["LeftShift"]    = "L-Shift",
+				["RightAlt"]     = "R-Alt",
+				["LeftAlt"]      = "L-Alt"
+			}
+
+			return aliases[name] or name
+		end
+
+		-- 5. Dynamic Sizing & State Handler
+		local function updateDisplay(binding: boolean)
 			isBinding = binding
+
+			local displayText = isBinding and "..." or getKeyName(currentKey)
+			bindBtn.Text = displayText
+
+			-- Calculate dynamic button width based on text length (Min 64px, padded)
+			local textService = game:GetService("TextService")
+			local textSize = textService:GetTextSize(displayText, 11, Enum.Font.GothamBold, Vector2.new(1000, 24))
+			local newWidth = math.max(64, textSize.X + 20)
+
+			TweenService:Create(bindBtn, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+				Size = UDim2.new(0, newWidth, 0, 24)
+			}):Play()
+
 			if isBinding then
-				bindBtn.Text = "..."
 				TweenService:Create(bindBtn, TweenInfo.new(0.15), {BackgroundColor3 = THEME.SurfaceHover or Color3.fromRGB(32, 32, 38)}):Play()
 				TweenService:Create(btnStroke, TweenInfo.new(0.15), {Color = THEME.Accent or Color3.fromRGB(168, 85, 247)}):Play()
 			else
-				bindBtn.Text = currentKey.Name
 				TweenService:Create(bindBtn, TweenInfo.new(0.15), {BackgroundColor3 = THEME.Background or Color3.fromRGB(13, 13, 16)}):Play()
 				TweenService:Create(btnStroke, TweenInfo.new(0.15), {Color = Color3.fromRGB(35, 35, 40)}):Play()
 			end
 		end
 
-		-- Hover animations for the container frame itself to blend with your design language
+		-- Initial display configuration
+		updateDisplay(false)
+
+		-- Interactive Hover States
 		keybindRow.MouseEnter:Connect(function()
-			TweenService:Create(keybindRow, TweenInfo.new(0.2), {BackgroundColor3 = THEME.SurfaceHover}):Play()
-			TweenService:Create(label, TweenInfo.new(0.2), {TextColor3 = THEME.TextColor}):Play()
-			TweenService:Create(cardStroke, TweenInfo.new(0.2), {Color = THEME.Accent}):Play()
+			TweenService:Create(keybindRow, TweenInfo.new(0.2), {BackgroundColor3 = THEME.SurfaceHover or Color3.fromRGB(24, 24, 30)}):Play()
+			TweenService:Create(label, TweenInfo.new(0.2), {TextColor3 = THEME.TextColor or Color3.fromRGB(255, 255, 255)}):Play()
+			TweenService:Create(cardStroke, TweenInfo.new(0.2), {Color = THEME.Accent or Color3.fromRGB(168, 85, 247)}):Play()
 		end)
 
 		keybindRow.MouseLeave:Connect(function()
-			TweenService:Create(keybindRow, TweenInfo.new(0.2), {BackgroundColor3 = THEME.Surface}):Play()
-			TweenService:Create(label, TweenInfo.new(0.2), {TextColor3 = THEME.TextMuted}):Play()
+			TweenService:Create(keybindRow, TweenInfo.new(0.2), {BackgroundColor3 = THEME.Surface or Color3.fromRGB(18, 18, 22)}):Play()
+			TweenService:Create(label, TweenInfo.new(0.2), {TextColor3 = THEME.TextMuted or Color3.fromRGB(140, 140, 150)}):Play()
 			TweenService:Create(cardStroke, TweenInfo.new(0.2), {Color = Color3.fromRGB(0, 0, 0)}):Play()
 		end)
 
-		-- Trigger binding mode on click
 		bindBtn.MouseButton1Click:Connect(function()
 			if isBinding then return end
-			updateBindingState(true)
+			updateDisplay(true)
 		end)
 
-		-- 5. Central Input Capture Hook
+		-- 6. Central Input Listener
 		local inputConnection
 		inputConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
 			if not isBinding then return end
-			if gameProcessed then return end
 
+			-- Allow unbinding / cancelling on Escape, Backspace, or Delete
 			if input.UserInputType == Enum.UserInputType.Keyboard then
-				local pressedKey = input.KeyCode
-
-				if pressedKey == Enum.KeyCode.Escape then
-					updateBindingState(false)
+				if input.KeyCode == Enum.KeyCode.Escape then
+					updateDisplay(false)
+					return
+				elseif input.KeyCode == Enum.KeyCode.Backspace or input.KeyCode == Enum.KeyCode.Delete then
+					currentKey = Enum.KeyCode.Unknown
+					updateDisplay(false)
+					if callback then task.spawn(callback, currentKey) end
 					return
 				end
+			end
 
-				currentKey = pressedKey
-				updateBindingState(false)
+			-- Capture Keyboard or Mouse Button inputs (Filtering out Mouse Movement/Wheel)
+			local newKey = nil
+			if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode ~= Enum.KeyCode.Unknown then
+				newKey = input.KeyCode
+			elseif input.UserInputType == Enum.UserInputType.MouseButton1 
+				or input.UserInputType == Enum.UserInputType.MouseButton2 
+				or input.UserInputType == Enum.UserInputType.MouseButton3 then
+				newKey = input.UserInputType
+			end
 
+			if newKey then
+				currentKey = newKey
+				updateDisplay(false)
 				if callback then
 					task.spawn(callback, currentKey)
 				end
 			end
 		end)
 
-		-- Clean up connection on destruction
-		keybindRow.Destroying:Connect(function()
-			if inputConnection then
-				inputConnection:Disconnect()
+		-- Auto-cancel binding mode if user clicks into a Chat/TextBox
+		local focusConnection
+		focusConnection = UserInputService.TextBoxFocused:Connect(function()
+			if isBinding then
+				updateDisplay(false)
 			end
 		end)
 
-		-- External Module Hook API Controls
+		-- Garbage Collection Cleanup
+		keybindRow.Destroying:Connect(function()
+			if inputConnection then inputConnection:Disconnect() end
+			if focusConnection then focusConnection:Disconnect() end
+		end)
+
+		-- 7. External API Controls
 		local keybindActions = {}
-		function keybindActions:SetKey(newKey: Enum.KeyCode)
-			currentKey = newKey
-			bindBtn.Text = currentKey.Name
+
+		function keybindActions:SetKey(newKey: Enum.KeyCode | Enum.UserInputType)
+			currentKey = newKey or Enum.KeyCode.Unknown
+			updateDisplay(false)
 			if callback then task.spawn(callback, currentKey) end
 		end
+
 		function keybindActions:GetKey()
 			return currentKey
 		end
