@@ -4,10 +4,12 @@ UILibrary.__index = UILibrary
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
-local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local TweenService = game:GetService("TweenService")
 local StarterGui = game:GetService("StarterGui")
 local UserInputService = game:GetService("UserInputService")
+-- CoreGui Target Acquisition for Notifications
+local CoreGui = game:GetService("CoreGui")
+
 
 -- Configuration / Sleek Cyber Obsidian Theme
 local THEME = {
@@ -62,22 +64,16 @@ local NOTIFICATION_TYPES = {
 	}
 }
 
--- PlayerGui Target Acquisition for Notifications
 local function getNotificationScreen()
-	local playerGui = LocalPlayer:WaitForChild("PlayerGui", 5)
-	if playerGui then
-		local ScreenGui = playerGui:FindFirstChild("UILibrary_Notifications")
-		if not ScreenGui then
-			ScreenGui = Instance.new("ScreenGui")
-			ScreenGui.Name = "UILibrary_Notifications"
-			ScreenGui.DisplayOrder = 999999
-			ScreenGui.ResetOnSpawn = false -- Keeps notifications alive through character resets
-			ScreenGui.Parent = playerGui
-		end
-		return ScreenGui
+	local screenGui = CoreGui:FindFirstChild("UILibrary_Notifications")
+	if not screenGui then
+		screenGui = Instance.new("ScreenGui")
+		screenGui.Name = "UILibrary_Notifications"
+		screenGui.DisplayOrder = 999999
+		screenGui.ResetOnSpawn = false -- Keeps notifications alive through character resets
+		screenGui.Parent = CoreGui
 	end
-
-	error("UILibrary: Failed to acquire PlayerGui.")
+	return screenGui
 end
 
 -- Positional Layout Recalculation Engine
@@ -117,7 +113,7 @@ function UILibrary.new(titleText: string)
 	self.TabCount = 0
 
 	-- =======================================================
-	-- PRODUCTION RE-ANCHOR: PLAYERGUI ARCHITECTURE
+	-- PRODUCTION RE-ANCHOR: COREGUI ARCHITECTURE
 	-- =======================================================
 	-- 1. Root ScreenGui Layer (Live Environment Optimization)
 	local screenGui = Instance.new("ScreenGui")
@@ -131,7 +127,7 @@ function UILibrary.new(titleText: string)
 	screenGui.SelectionGroup = true -- Forces individual layer culling optimization
 	screenGui.AutoLocalize = false   -- Prevents localized system fonts from rewriting/smudging text glyphs
 
-	screenGui.Parent = PlayerGui
+	screenGui.Parent = CoreGui
 	self.ScreenGui = screenGui
 
 	-- 2. Main Window Shell (Crisp Sub-Pixel Alignment)
